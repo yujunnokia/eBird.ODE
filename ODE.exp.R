@@ -8,7 +8,7 @@ rm(list=ls())
 
 #setwd("C:/Jun_home/workspace/eBird.ODE")
 #setwd("/Users/yujunnokia/Documents/workspace/eBird.ODE")
-setwd("/Users/junyu/Documents/workspace/eBird.ODE")
+setwd("/Users/yujunnokia/workspace/eBird.ODE")
 source("ODE.R")
 source("ODE.synthData.R")
 
