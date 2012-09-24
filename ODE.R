@@ -76,6 +76,19 @@ LogDiffExp <- function(a,b)
     return(c)
 }
 
+#
+# if b is 0 and c is -inf(or the other way around), then do not add to a.
+# else add b * c to a
+#
+Add <- function(a,b,c)
+{
+	if (b != 0 || c != -Inf) {
+		a <- a + b * c
+	} 
+	
+	return(a)
+}
+
 #######################
 # ODE model functions #
 #######################
@@ -111,19 +124,15 @@ ExpectationStep <- function(params,Y,B,E,Xo,Xd,Xe,visits)
     eta   <- params[(nOccCovs+2*nDetCovs+1):(nOccCovs+3*nDetCovs)]
     nu    <- params[(nOccCovs+3*nDetCovs+1):(nOccCovs+3*nDetCovs+nExpCovs)]
     
-    probOcc <- Logistic(Xo %*% alpha)
-    probExTrueDet <- array(0, c(nSites, nVisits))
-    probNoTrueDet <- array(0, c(nSites, nVisits))
-    probNoFalseDet <- array(0, c(nSites, nVisits))
+    logProbOcc <- log(Logistic(Xo %*% alpha))
+	logProbExTrueDet <- array(0, c(nSites, nVisits))
+	logProbNoTrueDet <- array(0, c(nSites, nVisits))
+	logProbNoFalseDet <- array(0, c(nSites, nVisits))
     for (t in 1:nVisits) {
-        probExTrueDet[,t] <- Logistic(Xd[,t,] %*% beta)
-        probNoTrueDet[,t] <- Logistic(Xd[,t,] %*% gamma)
-        probNoFalseDet[,t] <- Logistic(Xd[,t,] %*% eta)
+		logProbExTrueDet[,t] <- log(Logistic(Xd[,t,] %*% beta))
+		logProbNoTrueDet[,t] <- log(Logistic(Xd[,t,] %*% gamma))
+		logProbNoFalseDet[,t] <- log(Logistic(Xd[,t,] %*% eta))
     } # t
-    logProbOcc <- log(probOcc)
-    logProbExTrueDet <- log(probExTrueDet)
-    logProbNoTrueDet <- log(probNoTrueDet)
-    logProbNoFalseDet <- log(probNoFalseDet)
     
     # compute probability of expected occupancy
     probExpectedOcc <- rep(0,nSites)
@@ -141,30 +150,37 @@ ExpectationStep <- function(params,Y,B,E,Xo,Xd,Xe,visits)
         temp2 <- 0
         for (t in 1:visits[i]) {
             if (E[B[i,t]] == 1) {
-                if (Y[i,t] != 0 || logProbExTrueDet[i,t] != -Inf) {
-                    temp1 <- temp1 + Y[i,t] * logProbExTrueDet[i,t] 
-                } 
-                if ((1 - Y[i,t]) != 0 || LogDiffExp(0,logProbExTrueDet[i,t]) != -Inf) {
-                    temp1 <- temp1 + (1 - Y[i,t]) * LogDiffExp(0, logProbExTrueDet[i,t])
-                }
-                
+#                if (Y[i,t] != 0 || logProbExTrueDet[i,t] != -Inf) {
+#                    temp1 <- temp1 + Y[i,t] * logProbExTrueDet[i,t] 
+#                } 
+#                if ((1 - Y[i,t]) != 0 || LogDiffExp(0,logProbExTrueDet[i,t]) != -Inf) {
+#                    temp1 <- temp1 + (1 - Y[i,t]) * LogDiffExp(0, logProbExTrueDet[i,t])
+#                }
+				temp1 <- Add(temp1, Y[i,t], logProbExTrueDet[i,t])
+				temp1 <- Add(temp1, (1 - Y[i,t]), LogDiffExp(0,logProbExTrueDet[i,t]))
+				
                 if (Y[i,t] != 0) {
                     temp2 <- temp2 + -Inf
                 }
             } else {
-                if (Y[i,t] != 0 || logProbNoTrueDet[i,t] != -Inf) {
-                    temp1 <- temp1 + Y[i,t] * logProbNoTrueDet[i,t] 
-                } 
-                if ((1 - Y[i,t]) != 0 || LogDiffExp(0,logProbNoTrueDet[i,t]) != -Inf) {
-                    temp1 <- temp1 + (1 - Y[i,t]) * LogDiffExp(0, logProbNoTrueDet[i,t])
-                }
-                
-                if (Y[i,t] != 0 || logProbNoFalseDet[i,t] != -Inf) {
-                    temp2 <- temp2 + Y[i,t] * logProbNoFalseDet[i,t] 
-                } 
-                if ((1 - Y[i,t]) != 0 || LogDiffExp(0,logProbNoFalseDet[i,t]) != -Inf) {
-                    temp2 <- temp2 + (1 - Y[i,t]) * LogDiffExp(0, logProbNoFalseDet[i,t])
-                }
+#                if (Y[i,t] != 0 || logProbNoTrueDet[i,t] != -Inf) {
+#                    temp1 <- temp1 + Y[i,t] * logProbNoTrueDet[i,t] 
+#                } 
+#                if ((1 - Y[i,t]) != 0 || LogDiffExp(0,logProbNoTrueDet[i,t]) != -Inf) {
+#                    temp1 <- temp1 + (1 - Y[i,t]) * LogDiffExp(0, logProbNoTrueDet[i,t])
+#                }
+				temp1 <- Add(temp1, Y[i,t], logProbNoTrueDet[i,t])
+				temp1 <- Add(temp1, (1 - Y[i,t]), LogDiffExp(0,logProbNoTrueDet[i,t]))
+			
+#                if (Y[i,t] != 0 || logProbNoFalseDet[i,t] != -Inf) {
+#                    temp2 <- temp2 + Y[i,t] * logProbNoFalseDet[i,t] 
+#                } 
+#                if ((1 - Y[i,t]) != 0 || LogDiffExp(0,logProbNoFalseDet[i,t]) != -Inf) {
+#                    temp2 <- temp2 + (1 - Y[i,t]) * LogDiffExp(0, logProbNoFalseDet[i,t])
+#                }
+				temp2 <- Add(temp2, Y[i,t], logProbNoFalseDet[i,t])
+				temp2 <- Add(temp2, (1 - Y[i,t]), LogDiffExp(0,logProbNoFalseDet[i,t]))
+				
             }
         } # t
         probExpectedOcc[i] <- exp(logProbOcc[i] + temp1) / (exp(logProbOcc[i] + temp1) + exp(LogDiffExp(0,logProbOcc[i]) + temp2))
@@ -216,22 +232,16 @@ ComputeEJLL <- function(params,Y,B,E,Xo,Xd,Xe,visits,probExpectedOcc,regType,lam
     ids <- unique(c(B)) 
     ids <- ids[ids != 0]
     
-    probOcc <- Logistic(Xo %*% alpha)
-    probExp <- Logistic(Xe[ids,] %*% nu)
-    
-    probExTrueDet <- array(0, c(nSites, nVisits))
-    probNoTrueDet <- array(0, c(nSites, nVisits))
-    probNoFalseDet <- array(0, c(nSites, nVisits))
-    for (t in 1:nVisits) {
-        probExTrueDet[,t] <- Logistic(Xd[,t,] %*% beta)
-        probNoTrueDet[,t] <- Logistic(Xd[,t,] %*% gamma)
-        probNoFalseDet[,t] <- Logistic(Xd[,t,] %*% eta)
-    } # t   
-    logProbOcc <- log(probOcc)
-    logProbExp <- log(probExp)
-    logProbExTrueDet <- log(probExTrueDet)
-    logProbNoTrueDet <- log(probNoTrueDet)
-    logProbNoFalseDet <- log(probNoFalseDet)
+	logProbOcc <- log(Logistic(Xo %*% alpha))
+	logProbExp <- log(Logistic(Xe[ids,] %*% nu))
+	logProbExTrueDet <- array(0, c(nSites, nVisits))
+	logProbNoTrueDet <- array(0, c(nSites, nVisits))
+	logProbNoFalseDet <- array(0, c(nSites, nVisits))
+	for (t in 1:nVisits) {
+		logProbExTrueDet[,t] <- log(Logistic(Xd[,t,] %*% beta))
+		logProbNoTrueDet[,t] <- log(Logistic(Xd[,t,] %*% gamma))
+		logProbNoFalseDet[,t] <- log(Logistic(Xd[,t,] %*% eta))
+	} # t
     
     eJLL <- 0
     for (i in 1:nSites) {
@@ -239,41 +249,49 @@ ComputeEJLL <- function(params,Y,B,E,Xo,Xd,Xe,visits,probExpectedOcc,regType,lam
         temp2 <- 0
         for (t in 1:visits[i]) {
             if (E[B[i,t]] == 1) {
-                if (Y[i,t] != 0 || logProbExTrueDet[i,t] != -Inf) {
-                    temp1 <- temp1 + Y[i,t] * logProbExTrueDet[i,t] 
-                } 
-                if ((1-Y[i,t]) != 0 || LogDiffExp(0, logProbExTrueDet[i,t]) != -Inf) {
-                    temp1 <- temp1 + (1-Y[i,t]) * LogDiffExp(0, logProbExTrueDet[i,t])
-                }
+#                if (Y[i,t] != 0 || logProbExTrueDet[i,t] != -Inf) {
+#                    temp1 <- temp1 + Y[i,t] * logProbExTrueDet[i,t] 
+#                } 
+#                if ((1-Y[i,t]) != 0 || LogDiffExp(0, logProbExTrueDet[i,t]) != -Inf) {
+#                    temp1 <- temp1 + (1-Y[i,t]) * LogDiffExp(0, logProbExTrueDet[i,t])
+#                }
+				temp1 <- Add(temp1, Y[i,t], logProbExTrueDet[i,t])
+				temp1 <- Add(temp1, (1 - Y[i,t]), LogDiffExp(0,logProbExTrueDet[i,t]))
                 
                 if (Y[i,t] != 0) {
                     temp2 <- temp2 + -Inf
                 }
             } else {
-                if (Y[i,t] != 0 || logProbNoTrueDet[i,t] != -Inf) {
-                    temp1 <- temp1 + Y[i,t]*logProbNoTrueDet[i,t] 
-                } 
-                if ((1 - Y[i,t]) != 0 || LogDiffExp(0, logProbNoTrueDet[i,t]) != -Inf) {
-                    temp1 <- temp1 + (1 - Y[i,t]) * LogDiffExp(0, logProbNoTrueDet[i,t])
-                }
+#                if (Y[i,t] != 0 || logProbNoTrueDet[i,t] != -Inf) {
+#                    temp1 <- temp1 + Y[i,t]*logProbNoTrueDet[i,t] 
+#                } 
+#                if ((1 - Y[i,t]) != 0 || LogDiffExp(0, logProbNoTrueDet[i,t]) != -Inf) {
+#                    temp1 <- temp1 + (1 - Y[i,t]) * LogDiffExp(0, logProbNoTrueDet[i,t])
+#                }
+				temp1 <- Add(temp1, Y[i,t], logProbNoTrueDet[i,t])
+				temp1 <- Add(temp1, (1 - Y[i,t]), LogDiffExp(0,logProbNoTrueDet[i,t]))
                 
-                if (Y[i,t] != 0 || logProbNoFalseDet[i,t] != -Inf) {
-                    temp2 <- temp2 + Y[i,t] * logProbNoFalseDet[i,t] 
-                } 
-                if ((1 - Y[i,t]) != 0 || LogDiffExp(0, logProbNoFalseDet[i,t]) != -Inf) {
-                    temp2 <- temp2 + (1 - Y[i,t]) * LogDiffExp(0, logProbNoFalseDet[i,t])
-                }
+#                if (Y[i,t] != 0 || logProbNoFalseDet[i,t] != -Inf) {
+#                    temp2 <- temp2 + Y[i,t] * logProbNoFalseDet[i,t] 
+#                } 
+#                if ((1 - Y[i,t]) != 0 || LogDiffExp(0, logProbNoFalseDet[i,t]) != -Inf) {
+#                    temp2 <- temp2 + (1 - Y[i,t]) * LogDiffExp(0, logProbNoFalseDet[i,t])
+#                }
+				temp2 <- Add(temp2, Y[i,t], logProbNoFalseDet[i,t])
+				temp2 <- Add(temp2, (1 - Y[i,t]), LogDiffExp(0,logProbNoFalseDet[i,t]))
             }
         } # t
         
-        if (probExpectedOcc[i] != 0 || (logProbOcc[i] + temp1) != -Inf) {
-            eJLL <- eJLL + probExpectedOcc[i] * (logProbOcc[i] + temp1)
-        }
+#        if (probExpectedOcc[i] != 0 || (logProbOcc[i] + temp1) != -Inf) {
+#            eJLL <- eJLL + probExpectedOcc[i] * (logProbOcc[i] + temp1)
+#        }
+		eJLL <- Add(eJLL, probExpectedOcc[i], (logProbOcc[i] + temp1))
         
-        # if 1-probExpectedOcc[i] is zero, then it won't contribute to the eJLL even if temp2 is -inf
-        if ((1 - probExpectedOcc[i]) != 0 || (LogDiffExp(0, logProbOcc[i]) + temp2) != -Inf) {
-            eJLL <- eJLL + (1 - probExpectedOcc[i]) * (LogDiffExp(0, logProbOcc[i]) + temp2)
-        }
+#        # if 1-probExpectedOcc[i] is zero, then it won't contribute to the eJLL even if temp2 is -inf
+#        if ((1 - probExpectedOcc[i]) != 0 || (LogDiffExp(0, logProbOcc[i]) + temp2) != -Inf) {
+#            eJLL <- eJLL + (1 - probExpectedOcc[i]) * (LogDiffExp(0, logProbOcc[i]) + temp2)
+#        }
+		eJLL <- Add(eJLL, (1 - probExpectedOcc[i]), (LogDiffExp(0, logProbOcc[i]) + temp2))
     } # i
     
     if (regType == 1) 
@@ -595,19 +613,23 @@ PredictOcc <- function(params,Xo,Xd,Xe,Y,B,nVisits)
             logProbExp1 <- log(Logistic(Xe[iObserver,] %*% nu))
             logProbExp0 <- LogDiffExp(0,logProbExp1)
             for (t in iVisits) {
-                if (Y[t] != 0 || log(Logistic(Xd[t,] %*% beta)) != -Inf) {
-                    logProbExp1 <- logProbExp1 + Y[t] * log(Logistic(Xd[t,] %*% beta))    
-                }
-                if ((1 - Y[t]) != 0 || log(1-Logistic(Xd[t,] %*% beta)) != -Inf) {
-                    logProbExp1 <- logProbExp1 + (1-Y[t]) * log(1-Logistic(Xd[t,] %*% beta))
-                }
+#                if (Y[t] != 0 || log(Logistic(Xd[t,] %*% beta)) != -Inf) {
+#                    logProbExp1 <- logProbExp1 + Y[t] * log(Logistic(Xd[t,] %*% beta))    
+#                }
+#                if ((1 - Y[t]) != 0 || log(1-Logistic(Xd[t,] %*% beta)) != -Inf) {
+#                    logProbExp1 <- logProbExp1 + (1-Y[t]) * log(1-Logistic(Xd[t,] %*% beta))
+#                }
+				logProbExp1 <- Add(logProbExp1, Y[t], log(Logistic(Xd[t,] %*% beta)))
+				logProbExp1 <- Add(logProbExp1, (1-Y[t]), log(1-Logistic(Xd[t,] %*% beta)))
                 
-                if (Y[t] != 0 || log(Logistic(Xd[t,] %*% gamma)) != -Inf) {
-                    logProbExp0 <- logProbExp0 + Y[t] * log(Logistic(Xd[t,] %*% gamma))    
-                }
-                if ((1 - Y[t]) != 0 || log(1-Logistic(Xd[t,] %*% gamma)) != -Inf) {
-                    logProbExp0 <- logProbExp0 + (1-Y[t]) * log(1-Logistic(Xd[t,] %*% gamma))
-                }
+#                if (Y[t] != 0 || log(Logistic(Xd[t,] %*% gamma)) != -Inf) {
+#                    logProbExp0 <- logProbExp0 + Y[t] * log(Logistic(Xd[t,] %*% gamma))    
+#                }
+#                if ((1 - Y[t]) != 0 || log(1-Logistic(Xd[t,] %*% gamma)) != -Inf) {
+#                    logProbExp0 <- logProbExp0 + (1-Y[t]) * log(1-Logistic(Xd[t,] %*% gamma))
+#                }
+				logProbExp0 <- Add(logProbExp0, Y[t], log(Logistic(Xd[t,] %*% gamma)))
+				logProbExp0 <- Add(logProbExp0, (1-Y[t]), log(1-Logistic(Xd[t,] %*% gamma)))
             }
             logProbOcc1 <- logProbOcc1 + LogSumExp(logProbExp1,logProbExp0)
  
@@ -619,12 +641,14 @@ PredictOcc <- function(params,Xo,Xd,Xe,Y,B,nVisits)
                     logProbExp1 <- logProbExp1 + (-Inf)
                 }
                 
-                if (Y[t] != 0 || log(Logistic(Xd[t,] %*% eta)) != -Inf) {
-                    logProbExp0 <- logProbExp0 + Y[t] * log(Logistic(Xd[t,] %*% eta))    
-                }
-                if ((1 - Y[t]) != 0 || log(1-Logistic(Xd[t,] %*% eta)) != -Inf) {
-                    logProbExp0 <- logProbExp0 + (1-Y[t]) * log(1-Logistic(Xd[t,] %*% eta))
-                }
+#                if (Y[t] != 0 || log(Logistic(Xd[t,] %*% eta)) != -Inf) {
+#                    logProbExp0 <- logProbExp0 + Y[t] * log(Logistic(Xd[t,] %*% eta))    
+#                }
+#                if ((1 - Y[t]) != 0 || log(1-Logistic(Xd[t,] %*% eta)) != -Inf) {
+#                    logProbExp0 <- logProbExp0 + (1-Y[t]) * log(1-Logistic(Xd[t,] %*% eta))
+#                }
+				logProbExp0 <- Add(logProbExp0, Y[t], log(Logistic(Xd[t,] %*% eta)))
+				logProbExp0 <- Add(logProbExp0, (1-Y[t]), log(1-Logistic(Xd[t,] %*% eta)))
             }
             logProbExpectedOcc0 <- logProbExpectedOcc0 + LogSumExp(logProbExp1,logProbExp0)
         }
@@ -722,12 +746,14 @@ PredictExp <- function(params,Xo,Xd,Xe,Y,visits,B,observer)
             logProbOcc1 <- log(Logistic(Xo[i,] %*% alpha))
             logProbOcc0 <- LogDiffExp(0,logProbOcc1)
             for (t in iVisits) {
-                if (Y[i,t] != 0 || log(Logistic(Xd[i,t,] %*% beta)) != -Inf) {
-                    logProbOcc1 <- logProbOcc1 + Y[i,t] * log(Logistic(Xd[i,t,] %*% beta))    
-                }
-                if ((1 - Y[i,t]) != 0 || log(1-Logistic(Xd[i,t,] %*% beta)) != -Inf) {
-                    logProbOcc1 <- logProbOcc1 + (1-Y[i,t]) * log(1-Logistic(Xd[i,t,] %*% beta))
-                }
+#                if (Y[i,t] != 0 || log(Logistic(Xd[i,t,] %*% beta)) != -Inf) {
+#                    logProbOcc1 <- logProbOcc1 + Y[i,t] * log(Logistic(Xd[i,t,] %*% beta))    
+#                }
+#                if ((1 - Y[i,t]) != 0 || log(1-Logistic(Xd[i,t,] %*% beta)) != -Inf) {
+#                    logProbOcc1 <- logProbOcc1 + (1-Y[i,t]) * log(1-Logistic(Xd[i,t,] %*% beta))
+#                }
+				logProbOcc1 <- Add(logProbOcc1, Y[i,t], log(Logistic(Xd[i,t,] %*% beta)))
+				logProbOcc1 <- Add(logProbOcc1, (1 - Y[i,t]), log(1-Logistic(Xd[i,t,] %*% beta)))
                 
                 if (Y[i,t] == 1) {
                     logProbOcc0 <- logProbOcc0 + (-Inf)
@@ -739,19 +765,23 @@ PredictExp <- function(params,Xo,Xd,Xe,Y,visits,B,observer)
             logProbOcc1 <- log(Logistic(Xo[i,] %*% alpha))
             logProbOcc0 <- LogDiffExp(0,logProbOcc1)
             for (t in iVisits) {
-                if (Y[i,t] != 0 || log(Logistic(Xd[i,t,] %*% gamma)) != -Inf) {
-                    logProbOcc1 <- logProbOcc1 + Y[i,t] * log(Logistic(Xd[i,t,] %*% gamma))    
-                }
-                if ((1 - Y[i,t]) != 0 || log(1-Logistic(Xd[i,t,] %*% gamma)) != -Inf) {
-                    logProbOcc1 <- logProbOcc1 + (1-Y[i,t]) * log(1-Logistic(Xd[i,t,] %*% gamma))
-                }
+#                if (Y[i,t] != 0 || log(Logistic(Xd[i,t,] %*% gamma)) != -Inf) {
+#                    logProbOcc1 <- logProbOcc1 + Y[i,t] * log(Logistic(Xd[i,t,] %*% gamma))    
+#                }
+#                if ((1 - Y[i,t]) != 0 || log(1-Logistic(Xd[i,t,] %*% gamma)) != -Inf) {
+#                    logProbOcc1 <- logProbOcc1 + (1-Y[i,t]) * log(1-Logistic(Xd[i,t,] %*% gamma))
+#                }
+				logProbOcc1 <- Add(logProbOcc1, Y[i,t], log(Logistic(Xd[i,t,] %*% gamma)))
+				logProbOcc1 <- Add(logProbOcc1, (1 - Y[i,t]), log(1-Logistic(Xd[i,t,] %*% gamma)))
                 
-                if (Y[i,t] != 0 || log(Logistic(Xd[i,t,] %*% eta)) != -Inf) {
-                    logProbOcc0 <- logProbOcc0 + Y[i,t] * log(Logistic(Xd[i,t,] %*% eta))    
-                }
-                if ((1 - Y[i,t]) != 0 || log(1-Logistic(Xd[i,t,] %*% eta)) != -Inf) {
-                    logProbOcc0 <- logProbOcc0 + (1-Y[i,t]) * log(1-Logistic(Xd[i,t,] %*% eta))
-                }
+#                if (Y[i,t] != 0 || log(Logistic(Xd[i,t,] %*% eta)) != -Inf) {
+#                    logProbOcc0 <- logProbOcc0 + Y[i,t] * log(Logistic(Xd[i,t,] %*% eta))    
+#                }
+#                if ((1 - Y[i,t]) != 0 || log(1-Logistic(Xd[i,t,] %*% eta)) != -Inf) {
+#                    logProbOcc0 <- logProbOcc0 + (1-Y[i,t]) * log(1-Logistic(Xd[i,t,] %*% eta))
+#                }
+				logProbOcc0 <- Add(logProbOcc0, Y[i,t], log(Logistic(Xd[i,t,] %*% eta)))
+				logProbOcc0 <- Add(logProbOcc0, (1 - Y[i,t]), log(1-Logistic(Xd[i,t,] %*% eta)))
             }
             logProbExp0 <- logProbExp0 + LogSumExp(logProbOcc1,logProbOcc0)
         }
