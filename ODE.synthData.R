@@ -23,8 +23,14 @@ source("ODE.R")
 #   synthetic data generated from the model including detection history, occupancy 
 #	covaraites, detection covariates and true occupancy status.
 #
-GenerateData <- function(nSites,visits,nObservers,alpha,beta,gamma,eta,nu)  
+GenerateData <- function(nSites,visits,nObservers,params)  
 {
+	alpha <- params$alpha
+	beta  <- params$beta
+	gamma <- params$gamma
+	eta   <- params$eta
+	nu    <- params$nu
+	
     nOccCovs <- length(alpha)
     nDetCovs <- length(beta)
     nExpCovs <- length(nu)

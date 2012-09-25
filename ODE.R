@@ -587,16 +587,22 @@ PredictOcc <- function(params,Xo,Xd,Xe,Y,B,nVisits)
     nDetCovs <- dim(Xd)[2] # number of detection covs
     nExpCovs <- dim(Xe)[2] # number of detection covs
     
-	# check input arguments
-	if (length(params) != (nOccCovs+3*nDetCovs+nExpCovs)) {
-		stop("The number of parameters is not consistent with number of occupancy, detetction and expertise covariates")
-	}
+#	# check input arguments
+#	if (length(params) != (nOccCovs+3*nDetCovs+nExpCovs)) {
+#		stop("The number of parameters is not consistent with number of occupancy, detetction and expertise covariates")
+#	}
+#	
+#    alpha <- params[1:nOccCovs]
+#    beta  <- params[(nOccCovs+1):(nOccCovs+nDetCovs)]
+#    gamma <- params[(nOccCovs+nDetCovs+1):(nOccCovs+2*nDetCovs)]
+#    eta   <- params[(nOccCovs+2*nDetCovs+1):(nOccCovs+3*nDetCovs)]
+#    nu    <- params[(nOccCovs+3*nDetCovs+1):(nOccCovs+3*nDetCovs+nExpCovs)]
 	
-    alpha <- params[1:nOccCovs]
-    beta  <- params[(nOccCovs+1):(nOccCovs+nDetCovs)]
-    gamma <- params[(nOccCovs+nDetCovs+1):(nOccCovs+2*nDetCovs)]
-    eta   <- params[(nOccCovs+2*nDetCovs+1):(nOccCovs+3*nDetCovs)]
-    nu    <- params[(nOccCovs+3*nDetCovs+1):(nOccCovs+3*nDetCovs+nExpCovs)]
+	alpha <- params$alpha
+	beta  <- params$beta
+	gamma <- params$gamma
+	eta   <- params$eta
+	nu    <- params$nu
     
     if (!is.null(Y)) {
         logProbOcc1 <- log(Logistic(Xo %*% alpha))
@@ -679,16 +685,22 @@ PredictDet <- function(params,Xo,Xd,Xe,B)
     nDetCovs <- length(Xd) # number of detection covs
     nExpCovs <- dim(Xe)[2] # number of expertise covs
     
-	# check input arguments
-	if (length(params) != (nOccCovs+3*nDetCovs+nExpCovs)) {
-		stop("The number of parameters is not consistent with number of occupancy, detetction and expertise covariates")
-	}
+#	# check input arguments
+#	if (length(params) != (nOccCovs+3*nDetCovs+nExpCovs)) {
+#		stop("The number of parameters is not consistent with number of occupancy, detetction and expertise covariates")
+#	}
+#	
+#    alpha <- params[1:nOccCovs]
+#    beta  <- params[(nOccCovs+1):(nOccCovs+nDetCovs)]
+#    gamma <- params[(nOccCovs+nDetCovs+1):(nOccCovs+2*nDetCovs)]
+#    eta   <- params[(nOccCovs+2*nDetCovs+1):(nOccCovs+3*nDetCovs)]
+#    nu    <- params[(nOccCovs+3*nDetCovs+1):(nOccCovs+3*nDetCovs+nExpCovs)]
 	
-    alpha <- params[1:nOccCovs]
-    beta  <- params[(nOccCovs+1):(nOccCovs+nDetCovs)]
-    gamma <- params[(nOccCovs+nDetCovs+1):(nOccCovs+2*nDetCovs)]
-    eta   <- params[(nOccCovs+2*nDetCovs+1):(nOccCovs+3*nDetCovs)]
-    nu    <- params[(nOccCovs+3*nDetCovs+1):(nOccCovs+3*nDetCovs+nExpCovs)]
+	alpha <- params$alpha
+	beta  <- params$beta
+	gamma <- params$gamma
+	eta   <- params$eta
+	nu    <- params$nu
     
     probOcc1 <- Logistic(Xo %*% alpha)
     probExp1 <- Logistic(Xe[B,] %*% nu)
@@ -720,16 +732,22 @@ PredictExp <- function(params,Xo,Xd,Xe,Y,visits,B,observer)
     nExpCovs <- dim(Xe)[2]  # number of expertise covs
     nSites <- nrow(Xo)  # number of sites 
     
-	# check input arguments
-	if (length(params) != (nOccCovs+3*nDetCovs+nExpCovs)) {
-		stop("The number of parameters is not consistent with number of occupancy, detetction and expertise covariates")
-	}
+#	# check input arguments
+#	if (length(params) != (nOccCovs+3*nDetCovs+nExpCovs)) {
+#		stop("The number of parameters is not consistent with number of occupancy, detetction and expertise covariates")
+#	}
+#	
+#    alpha <- params[1:nOccCovs]
+#    beta  <- params[(nOccCovs+1):(nOccCovs+nDetCovs)]
+#    gamma <- params[(nOccCovs+nDetCovs+1):(nOccCovs+2*nDetCovs)]
+#    eta   <- params[(nOccCovs+2*nDetCovs+1):(nOccCovs+3*nDetCovs)]
+#    nu    <- params[(nOccCovs+3*nDetCovs+1):(nOccCovs+3*nDetCovs+nExpCovs)]
 	
-    alpha <- params[1:nOccCovs]
-    beta  <- params[(nOccCovs+1):(nOccCovs+nDetCovs)]
-    gamma <- params[(nOccCovs+nDetCovs+1):(nOccCovs+2*nDetCovs)]
-    eta   <- params[(nOccCovs+2*nDetCovs+1):(nOccCovs+3*nDetCovs)]
-    nu    <- params[(nOccCovs+3*nDetCovs+1):(nOccCovs+3*nDetCovs+nExpCovs)]
+	alpha <- params$alpha
+	beta  <- params$beta
+	gamma <- params$gamma
+	eta   <- params$eta
+	nu    <- params$nu
     
     if (!is.null(Y)) {
         logProbExp1 <- log(Logistic(Xe[observer,] %*% nu))

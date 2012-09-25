@@ -43,6 +43,13 @@ beta <- c(1,rnorm(nDetCovs, mean = 1.2, sd = 1)*3)
 gamma <- c(1,rnorm(nDetCovs, mean = 0.6, sd = 1)*3)
 eta <- c(1,rnorm(nDetCovs, mean = -1, sd = 1)*3)
 nu <- c(1,rnorm(nExpCovs)*3)
+trueParams <- list()
+trueParams[["alpha"]] <- alpha
+trueParams[["beta"]]  <- beta
+trueParams[["gamma"]] <- gamma
+trueParams[["eta"]]   <- eta
+trueParams[["nu"]]    <- nu
+
 covs <- rnorm(1000*nDetCovs, mean = 0.5, sd = 1)
 dim(covs) <- c(1000,nDetCovs)
 covs <- cbind(1,covs)
@@ -54,7 +61,7 @@ cat("mean No false detection prob is",mean(Logistic(covs %*% eta)),"\n",sep=" ")
 # generate testing data
 ########################
 teVisits <- array(nVisits, nTeSites)
-teData <- GenerateData(nTeSites,teVisits,nObservers,alpha,beta,gamma,eta,nu)
+teData <- GenerateData(nTeSites,teVisits,nObservers,trueParams)
 teDetHists <- teData$detHists
 teObservers <- teData$observers
 teExpertise <- teData$expertise
@@ -76,7 +83,7 @@ for (i in 1:nTrSites) {
         trVisits[i] <- 1
     }
 }
-trData <- GenerateData(nTrSites,trVisits,nObservers,alpha,beta,gamma,eta,nu)
+trData <- GenerateData(nTrSites,trVisits,nObservers,trueParams)
 trDetHists <- trData$detHists
 trObservers <- trData$observers
 trExpertise <- trData$expertise
@@ -190,9 +197,9 @@ trTrueOccs <- trData$trueOccs
     trueOccProb <- array(0,c(nTeSites,1))
     modelOccProb <- array(0,c(nTeSites,1))
     for (i in 1:nTeSites) {
-        trueOccProb[i] <- PredictOcc(c(alpha,beta,gamma,eta,nu),
+        trueOccProb[i] <- PredictOcc(trueParams,
                 teOccCovs[i,],teDetCovs[i,,],teExpCovs,teDetHists[i,],teObservers[i,],teVisits[i]) 
-        modelOccProb[i] <- PredictOcc(c(alphaODE,betaODE,gammaODE,etaODE,nuODE),
+        modelOccProb[i] <- PredictOcc(params,
                 teOccCovs[i,],teDetCovs[i,,],teExpCovs,teDetHists[i,],teObservers[i,],teVisits[i]) 
     }
     trueOcc <- sum(round(trueOccProb)==teTrueOccs)/nTeSites
@@ -206,9 +213,9 @@ trTrueOccs <- trData$trueOccs
     modelDetHists <- array(0,c(nTeSites,nVisits))
     for (i in 1:nTeSites) {
         for (t in 1:teVisits[i]) {
-            trueDetHists[i,t] <- PredictDet(c(alpha,beta,gamma,eta,nu),
+            trueDetHists[i,t] <- PredictDet(trueParams,
                     teOccCovs[i,],teDetCovs[i,t,],teExpCovs,teObservers[i,t]) 
-            modelDetHists[i,t] <- PredictDet(c(alphaODE,betaODE,gammaODE,etaODE,nuODE),
+            modelDetHists[i,t] <- PredictDet(params,
                     teOccCovs[i,],teDetCovs[i,t,],teExpCovs,teObservers[i,t]) 
         }
     }
@@ -221,9 +228,9 @@ trTrueOccs <- trData$trueOccs
     trueExpProb <- array(0,c(nObservers,1))
     modelExpProb <- array(0,c(nObservers,1))
     for (j in 1:nObservers) {
-        trueExpProb[j] <- PredictExp(c(alpha,beta,gamma,eta,nu),
+        trueExpProb[j] <- PredictExp(trueParams,
                 teOccCovs,teDetCovs,teExpCovs,teDetHists,teVisits,teObservers,j) 
-        modelExpProb[j] <- PredictExp(c(alphaODE,betaODE,gammaODE,etaODE,nuODE),
+        modelExpProb[j] <- PredictExp(params,
                 teOccCovs,teDetCovs,teExpCovs,teDetHists,teVisits,teObservers,j) 
     }
     trueExp <- sum(round(trueExpProb) == teExpertise) / nObservers
